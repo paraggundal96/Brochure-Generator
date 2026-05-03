@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Brochure Generator</title>
+</head>
+<body>
+
+<h2>Brochure Generator</h2>
+
+<input id="company" placeholder="Company Name"><br><br>
+<input id="url" placeholder="Website URL"><br><br>
+
+<select id="source">
+    <option value="Ollama">Ollama</option>
+    <option value="OpenRouter">OpenRouter</option>
+</select><br><br>
+
+<input id="model" placeholder="Model Name (e.g. qwen3:4b)"><br><br>
+
+<button onclick="generate()">Generate</button>
+
+<pre id="output"></pre>
+
+<script>
+    async function generate() {
+        const data = {
+            company_name: document.getElementById("company").value,
+            url: document.getElementById("url").value,
+            source: document.getElementById("source").value,
+            model_name: document.getElementById("model").value
+        };
+    
+        const outputBox = document.getElementById("output");
+        outputBox.innerText = "Loading...";
+    
+        try {
+            const res = await fetch("http://127.0.0.1:8000/generate", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(data)
+            });
+    
+            const result = await res.json();
+    
+            if (result.output) {
+                outputBox.innerText = result.output;
+            } else if (result.error) {
+                outputBox.innerText = "Error: " + result.error;
+            } else {
+                outputBox.innerText = JSON.stringify(result, null, 2);
+            }
+    
+        } catch (err) {
+            outputBox.innerText = "Request failed: " + err.message;
+        }
+    }
+    </script>
+
+</body>
+</html>
