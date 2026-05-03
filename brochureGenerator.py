@@ -1,26 +1,20 @@
 from relevantLinks import fetch_content_from_relevant_links
-import gradio as gr
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 
 brochure_system_prompt = '''
-You are an assistant that analyzes the contents of several relevant pages from a company website
-and creates a short brochure about the company for prospective customers, investors and recruits.
-Respond in markdown without code blocks.
-Include details of company culture, customers and careers/jobs if you have the information.
+You are an assistant that creates a short brochure about a company.
+Include company culture, customers, and careers if available.
+Return clean markdown.
 '''
 
-def get_brochure_user_prompt(company_name, url):
-    user_prompt = f"""
-    You are looking at a company called: {company_name}
-    Here are the contents of its landing page and other relevant pages;
-    """
-    user_prompt += fetch_content_from_relevant_links(url)
-    user_prompt = user_prompt[:3000] # Truncate if more than 5,000 characters
-    return user_prompt
 
 def get_model(source, model_name):
+
     if source == "OpenRouter":
         return ChatOpenAI(
             model=model_name,
@@ -39,13 +33,19 @@ def get_model(source, model_name):
 def create_brochure(company_name, url, source, model_name):
 
     model = get_model(source, model_name)
+
+    user_prompt = f"""
+    Company: {company_name}
+    Website data:
+    """
+    user_prompt += fetch_content_from_relevant_links(url, model)
+    user_prompt = user_prompt[:3000]
+
     messages = [
-        {"role":"system", "content": brochure_system_prompt},
-        {"role":"user","content": get_brochure_user_prompt(company_name, url)}
+        {"role": "system", "content": brochure_system_prompt},
+        {"role": "user", "content": user_prompt}
     ]
 
     response = model.invoke(messages)
 
     return response.content
-
-
